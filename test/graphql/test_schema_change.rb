@@ -257,10 +257,9 @@ class TestSchemaChange < Minitest::Test
     assert result.fatal?
   end
 
-  def test_catalog_includes_translations
+  def test_catalog_includes_a_reason_for_each_change
     Checker::Catalog::ENTRIES.each_key do |id|
-      assert Checker::Catalog.reason(id, "en").length > 15, id
-      assert Checker::Catalog.reason(id, "ja").match?(/\p{Hiragana}/), id
+      assert Checker::Catalog.reason(id).length > 15, id
     end
   end
 

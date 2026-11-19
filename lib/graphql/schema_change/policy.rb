@@ -31,10 +31,9 @@ module GraphQL
 
       attr_reader :today, :diagnostics, :tracked_directives, :applied_classification, :closed_world_statement
 
-      def initialize(settings, today:, locale:)
+      def initialize(settings, today:)
         @options = DEFAULTS.merge(mapping(settings, "policy", DEFAULTS.keys))
         @today = date(today || ENV["GRAPHQL_LINT_TODAY"] || Date.today, "today")
-        @locale = locale
         @diagnostics = []
         @fail_on = choices(@options.fetch("fail_on"), "policy.fail_on", CLASSIFICATIONS)
         @warn_on = choices(@options.fetch("warn_on"), "policy.warn_on", CLASSIFICATIONS)
@@ -59,27 +58,21 @@ module GraphQL
           complete_corpus: complete_corpus}.freeze
         if closed_world_statement && valid_operations.zero?
           diagnostic("empty-closed-world", :warning,
-            localized("The closed-world policy requires at least one valid known operation.",
-              "閉じた利用者集合を使うには、妥当な既知 Operation が1件以上必要です。"))
+            "The closed-world policy requires at least one valid known operation.")
         elsif closed_world_statement && !complete_corpus
           diagnostic("incomplete-closed-world", :warning,
-            localized("Some known documents could not be checked. The closed-world policy did not lower classifications.",
-              "検証できなかった既知文書があるため、閉じた利用者集合による分類の引き下げは行いません。"))
+            "Some known documents could not be checked. The closed-world policy did not lower classifications.")
         end
         @allows.each do |allow|
           next unless expired?(allow)
 
-          diagnostic("expired-allow", :error, localized(
-            "The allowance for #{allow.change} expired on #{allow.expires}.",
-            "#{allow.change} の許可は #{allow.expires} に期限切れになりました。"))
+          diagnostic("expired-allow", :error, "The allowance for #{allow.change} expired on #{allow.expires}.")
         end
         changes.each { |change| evaluate_change(change, context, hooks) }
         @allows.each do |allow|
           next if @used_allows[allow] || expired?(allow)
 
-          diagnostic("unused-allow", :info, localized(
-            "The allowance for #{allow.change} did not match a change.",
-            "#{allow.change} の許可に該当する変更がありませんでした。"))
+          diagnostic("unused-allow", :info, "The allowance for #{allow.change} did not match a change.")
         end
 
         changes.any? { |change| change.policy[:result] == :fail } ||
@@ -110,7 +103,7 @@ module GraphQL
         if closed_world_statement && context.fetch(:complete_corpus) && context.fetch(:valid_operations).positive? &&
             context.fetch(:broken_operations).empty? &&
             change.breaking? && change.related_operations.empty?
-          reason = Catalog.reason("closed_world_unreferenced", @locale)
+          reason = Catalog.reason("closed_world_unreferenced")
           change.reclassify(:dangerous, reason: "#{change.reason} #{reason}")
           matched = "closed_world"
         end
@@ -270,10 +263,6 @@ module GraphQL
 
       def diagnostic(type, severity, message)
         diagnostics << LintCore::Diagnostic.new(rule_id: "policy/#{type}", severity: severity, message: message)
-      end
-
-      def localized(english, japanese)
-        @locale == "ja" ? japanese : english
       end
     end
   end

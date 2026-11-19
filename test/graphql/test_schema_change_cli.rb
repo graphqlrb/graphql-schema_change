@@ -13,9 +13,20 @@ class TestSchemaChangeCLI < Minitest::Test
     assert_includes output, "FIELD_TYPE_CHANGED"
     assert_empty errors
 
-    status, output, = invoke("explain", "FIELD_TYPE_CHANGED", "--locale", "ja")
+    status, output, = invoke("explain", "FIELD_TYPE_CHANGED")
     assert_equal 0, status
-    assert_includes output, "戻り値"
+    assert_includes output, "The return type changed, which can affect selections and the shape of values."
+  end
+
+  def test_explain_validates_an_explicit_config_path
+    Dir.mktmpdir("graphql-change-config") do |directory|
+      path = File.join(directory, "missing.yml")
+      status, output, errors = invoke("explain", "FIELD_TYPE_CHANGED", "--config", path)
+
+      assert_equal 2, status
+      assert_empty output
+      assert_includes errors, path
+    end
   end
 
   def test_checks_a_previous_git_revision_and_writes_multiple_formats

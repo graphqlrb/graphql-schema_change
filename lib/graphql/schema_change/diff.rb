@@ -9,9 +9,9 @@ module GraphQL
       ROOT_KINDS = %w[query mutation subscription].freeze
       SPECIAL_DIRECTIVES = %w[deprecated specifiedBy oneOf].freeze
 
-      def initialize(old_index, new_index, settings, locale)
+      def initialize(old_index, new_index, settings)
         @old, @new = old_index, new_index
-        @settings, @locale = settings, locale
+        @settings = settings
         @changes = []
       end
 
@@ -255,7 +255,7 @@ module GraphQL
           reason_key = "unreachable"
         end
         coordinate = (after || before)&.coordinate
-        @changes << Change.new(type: type, coordinate: coordinate, reason: Catalog.reason(reason_key, @locale),
+        @changes << Change.new(type: type, coordinate: coordinate, reason: Catalog.reason(reason_key),
           position: position, old_location: old_location, new_location: new_location,
           deprecation: (before.deprecation if before.respond_to?(:deprecation)), **attributes)
       end

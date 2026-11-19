@@ -32,8 +32,9 @@ puts result.exit_status
 Run `graphql-schema-change init` to create `.graphql-schema-change.yml`. The
 default policy fails on breaking changes or newly invalid operations. Use
 `policy.allow` with a reason to approve individual changes, and
-`--format github` to surface findings as GitHub Actions annotations. Use
-`--locale ja` for Japanese change descriptions.
+`--format github` to surface findings as GitHub Actions annotations.
+
+In CI, fetch the base revision before running a check with a `git:` source.
 
 The tool reports what the supplied operations use. Variable inputs are matched
 by type because their runtime values are unavailable. Use only trusted
@@ -42,6 +43,9 @@ configuration and Ruby files because `require` and `ruby:` execute Ruby code.
 ## Compatibility classifications
 
 The checker uses input reachability and output guarantees to classify changes.
+A field that becomes nullable can break the response contract while known
+operations continue to validate. See the [change catalog](docs/changes.md) for
+the IDs you can use in `policy.allow` and `policy.overrides`.
 The `conservative` profile matches GraphQL.js for optional argument and input
 field additions, input-only enum value additions, output-only enum value
 removals, and removal of schema-only directives.
@@ -54,7 +58,8 @@ The development tests compare supported changes against
 
 ## Development
 
-Run `bundle exec rake test build` at this repository's root. This gem has its
+Run `bundle exec rake test docs:check build` at this repository's root. Run
+`bundle exec rake docs:generate` after changing the change catalog. This gem has its
 own version and accepts Core 0.1.x. Before Core is published, GitHub CI can
 use a public Core checkout named by the `GRAPHQL_LINT_CORE_REPOSITORY`
 repository variable (`owner/repository`). The release workflow resolves Core

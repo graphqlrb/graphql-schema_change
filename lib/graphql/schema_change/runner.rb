@@ -15,15 +15,14 @@ module GraphQL
         settings = LintCore::Config.load(config, defaults: DEFAULTS, overrides: overrides, filename: CONFIG_FILENAME,
           disallow: UNSUPPORTED)
         @settings = settings
-        @locale = settings.fetch("locale", "en").to_s
-        policy = Policy.new(settings.fetch("policy"), today: settings["today"], locale: @locale)
+        policy = Policy.new(settings.fetch("policy"), today: settings["today"])
         LintCore::Config.require_extensions(settings)
         @old_schema = load_schema(settings.fetch("old"), "old")
         @new_schema = load_schema(settings.fetch("new"), "new")
         diagnostics = @old_schema.diagnostics + @new_schema.diagnostics
         return result(diagnostics: diagnostics, exit_status: 2) if @old_schema.fatal? || @new_schema.fatal?
 
-        changes = Diff.new(@old_schema.index, @new_schema.index, policy, @locale).compare
+        changes = Diff.new(@old_schema.index, @new_schema.index, policy).compare
         documents = document_set(settings["documents"])
         impact = Impact.new(documents, @old_schema, @new_schema)
         impact.compare(changes)
@@ -46,11 +45,11 @@ module GraphQL
       private
 
       def result(**values)
-        Result.new(**values, locale: @locale || "en", config: @settings || {}, old_schema: @old_schema, new_schema: @new_schema)
+        Result.new(**values, config: @settings || {}, old_schema: @old_schema, new_schema: @new_schema)
       end
 
       def load_schema(input, name)
-        loader_options = {stdin: @stdin, locale: @locale, repository: @settings.dig("git", "repository")}
+        loader_options = {stdin: @stdin, repository: @settings.dig("git", "repository")}
         if input.is_a?(Hash) && (input.key?("sources") || input.key?("prelude") || input.key?("skip_checks") || input.key?("emit_generated_sdl"))
           unknown = input.keys - %w[sources prelude skip_checks emit_generated_sdl]
           raise LintCore::ConfigError, "Unknown setting #{name}.#{unknown.first}." unless unknown.empty?

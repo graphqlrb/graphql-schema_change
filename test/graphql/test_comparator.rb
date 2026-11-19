@@ -73,14 +73,14 @@ class TestSchemaComparator < Minitest::Test
   private
 
   def compare(old_schema, new_schema)
-    settings = Checker::Policy.new({"applied_directives" => {"track" => ["marker"]}}, today: nil, locale: "en")
+    settings = Checker::Policy.new({"applied_directives" => {"track" => ["marker"]}}, today: nil)
     loader = GraphQL::LintCore::SchemaLoader
     indexes = [old_schema, new_schema].map do |schema|
       loaded = loader.load("-", stdin: StringIO.new(schema))
       refute loaded.fatal?, loaded.diagnostics.map(&:message).join("\n")
       loaded.index
     end
-    Checker::Diff.new(*indexes, settings, "en").compare
+    Checker::Diff.new(*indexes, settings).compare
   end
 
   def comparator_key(change)

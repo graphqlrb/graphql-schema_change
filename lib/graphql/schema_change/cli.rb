@@ -58,7 +58,6 @@ module GraphQL
           option.on("--documents GLOB", "Known operation documents") { |glob| append("documents", glob) }
           option.on("-c", "--config PATH", "Configuration file") { |path| @config = path }
           option.on("-f", "--format NAME[:PATH]", "Output format (repeatable)") { |format| append("format", format) }
-          option.on("--locale LOCALE", %w[en ja], "Locale (en or ja)") { |locale| @options["locale"] = locale }
           option.on("-r", "--require PATH", "Load a Ruby extension") { |path| append("require", path) }
           option.on("--emit-generated-sdl PATH", "Save generated SDL for the new schema") { |path| @emit_path = path }
           option.on("--no-color", "Disable ANSI colors") { @options["no_color"] = true }
@@ -140,12 +139,14 @@ module GraphQL
           raise LintCore::InputError, "Provide a known change ID. Run graphql-schema-change changes to see the list."
         end
 
+        if @config
+          LintCore::Config.load(@config, defaults: Runner::DEFAULTS, filename: Runner::CONFIG_FILENAME,
+            overrides: @options, disallow: Runner::UNSUPPORTED)
+        end
+
         id = args.first
         entry = Catalog::ENTRIES.fetch(id)
-        settings = LintCore::Config.load(@config, defaults: Runner::DEFAULTS, filename: Runner::CONFIG_FILENAME,
-          overrides: @options, disallow: Runner::UNSUPPORTED)
-        locale = settings.fetch("locale")
-        @stdout.puts(id, "Default classification: #{entry.classification}", Catalog.reason(id, locale))
+        @stdout.puts(id, "Default classification: #{entry.classification}", Catalog.reason(id))
         @stdout.puts("The schema and policy can change the classification.") if entry.conditional
       end
 
